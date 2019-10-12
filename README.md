@@ -1,4 +1,4 @@
-Tcp parameters every programmer should know
+Based on linux kernel 2.6.32
 
   - [tcp connect](tcp-connect.md)
   - [tcp receive](tcp-receive.md)
