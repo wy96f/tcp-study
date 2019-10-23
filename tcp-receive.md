@@ -113,5 +113,5 @@ Meanwhile errors counts CRC errors, too-short frames and too-long frames.
 
 ![](images/setsockopt.png)
 
-setsockopt(SO_RCVBUF) overides net.ipv4.tcp_rmem
+setsockopt(SO_RCVBUF) overides net.ipv4.tcp_rmem. 真正设置的值是2倍，因为需要包括额外的数据，比如struct sk_buff。
 
