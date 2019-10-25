@@ -64,6 +64,62 @@ This overides `net.ipv4.tcp_wmem` default。真正设置的值是2倍，因为�
   在Reno的快速恢复中，一旦出现3次重复确认，TCP发送方会重发重复确认对应序列号的分段并设置定时器等待该重发分段包的分段确认包，当该分段确认包收到后，就立即退出快速恢复阶段，进入拥塞控制阶段，但如果某个导致重复确认的分段包到遇到重复确认期间所发送的分段包存在多个丢失的话，则这些丢失只能等待超时重发，并且导致拥塞窗口多次进入拥塞控制阶段而多次下降。
 而New Reno的快速恢复中，一旦出现3次重复确认，TCP发送方先记下3次重复确认时已发送但未确认的分段的最大序列号，然后重发重复确认对应序列号的分段包。如果只有该重复确认的分段丢失，则接收方接收该重发分段包后，会立即返回最大序列号的分段确认包，从而完成重发；但如果重复确认期间的发送包有多个丢失，接收方在接收该重发分段后，会返回非最大序列号的分段确认包，从而发送方继续保持重发这些丢失的分段，直到最大序列号的分段确认包的返回，才退出快速恢复阶段，进入拥塞控制阶段。如果仍然超时，则回到慢启动阶段。
 
+### qdisc
 
+包含三方面：QDISCS, CLASSES, FILTERS
+
+ * qdisc
+ 
+   qdisc通过队列将数据包缓存起来，用来控制网络收发的速度，包括无分类qdisc、有分类qdisc。
+ 
+ * classes
+ 
+   class用来表示控制策略，只用于有分类的qdisc上。每个class要么包含多个子类，要么只包含一个子qdisc。当然，每个class还包括一些列的filter，控制数据包流向不同的子类，或者是直接丢掉。
+ 
+ * filters
+
+   filter用来将数据包划分到具体的控制策略中，包括以下几种：
+   u32：根据协议、IP、端口等过滤数据包。
+   
+   fwmark：根据iptables MARK来过滤数据包。
+   
+   tos：根据tos字段过滤数据包。
+
+
+平常测试使用的Netem ：delay, loss, duplication, corruption, re-ordering使用到qdisc相关。
+
+默认qdisc设置通过命令`tc qdisc show`得到
+
+```qdisc pfifo_fast 0: dev eth0 root refcnt 2 bands 3 priomap  1 2 2 2 1 2 0 0 1 1 1 1 1 1 1 1```
+
+相应的队列大小通过命令`ifconfig`
+
+```collisions:0 txqueuelen:1000```
+
+### 重传
+
+通过sysctl -a可以查看到重传次数：
+
+`net.ipv4.tcp_retries1 = 3`
+
+`net.ipv4.tcp_retries2 = 15`(The default value of 15 yields a hypothetical timeout of 924.6 seconds and is a lower bound for the effective timeout.)
+
+以下流程解释了这2个参数：
+
+ 1. There are two thresholds R1 and R2 measuring the amount of retransmission that has occurred for the same segment. R1 and R2 might be measured in time units or as a count of retransmissions.
+ 
+ 2. When the number of transmissions of the same segment reaches or exceeds threshold R1, pass negative advice (see Section 3.3.1.4) to the IP layer, to trigger dead-gateway diagnosis.
+ 
+ 3. When the number of transmissions of the same segment reaches a threshold R2 greater than R1, close the connection.
+ 
+ 4. An application MUST be able to set the value for R2 for a particular connection. For example, an interactive application might set R2 to "infinity," giving the user control over when to disconnect.
+ 
+ 5. TCP SHOULD inform the application of the delivery problem (unless such information has been disabled by the application; see Section 4.2.4.1), when R1 is reached and before R2. This will allow a remote login (User Telnet) application program to inform the user, for example.
 
 ## stage 1
+
+相关参数同接收流程
+
+命令`ethtool -g eth0`可以得到发送ring buffer size：
+
+```TX:       256```
