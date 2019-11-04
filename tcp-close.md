@@ -1,4 +1,4 @@
-#tcp close
+# tcp close
 
 ## 概览
 
@@ -80,57 +80,57 @@ Fin_wait2到time_wait的转化有以下3个触发点：
 
 1. fin_wait2定时器未超时(>`TCP_TIMEWAIT_LEN`)
 
-收到fin, 处理流程为`tcp_rcv_state_process` -> `tcp_data_queue` -> `tcp_fin` 最终进入timewait timer（超时时间为`TCP_TIMEWAIT_LEN`），sub_state为time_wait.
+   收到fin, 处理流程为`tcp_rcv_state_process` -> `tcp_data_queue` -> `tcp_fin` 最终进入timewait timer（超时时间为`TCP_TIMEWAIT_LEN`），sub_state为time_wait.
 
 ![](images/tcp_fin.png)
 
 2. fin_wait2定时器超时(>`TCP_TIMEWAIT_LEN`)
 
-如果linger2 >= 0（默认是0）,且等待时间超过`TCP_TIMEWAIT_LEN`，则进入timewait_timer（超时时间为超过`TCP_TIMEWAIT_LEN`部分的时间），sub_state为fin_wait2。否则直接发送rst。
+   如果linger2 >= 0（默认是0）,且等待时间超过`TCP_TIMEWAIT_LEN`，则进入timewait_timer（超时时间为超过`TCP_TIMEWAIT_LEN`部分的时间），sub_state为fin_wait2。否则直接发送rst。
 
 ![](images/tcp_keepalive_timer.png)
 
 3. time_wait定时器未超时（<=`TCP_TIMEWAIT_LEN`，或者上面2情况进入timewait timer）
 
-如果sub_state为fin_wait2， 收到fin后调用`tcp_timewait_state_process`，路径为`tcp_v4_rcv`->`tcp_timewait_state_process`。如果开启回收，超时时间为3.5rto, 否则为`TCP_TIMEWAIT_LEN`。
+   如果sub_state为fin_wait2， 收到fin后调用`tcp_timewait_state_process`，路径为`tcp_v4_rcv`->`tcp_timewait_state_process`。如果开启回收，超时时间为3.5rto, 否则为`TCP_TIMEWAIT_LEN`。
 
 ![](images/do_time_wait.png)
 
 ![](images/handle_fin_on_finwait2.png)
 
-#### net.ipv4.tcp_timestamps
+  #### net.ipv4.tcp_timestamps
 
-启用的前提下reuse, recycle才有用
+  启用的前提下reuse, recycle才有用
 
-#### net.ipv4.tcp_tw_recycle
+  #### net.ipv4.tcp_tw_recycle
 
-会在3.5rto后销毁
+  会在3.5rto后销毁
 
-![](images/rto.png)
+  ![](images/rto.png)
 
-在nat后面别用，因为他会判断packet时间，会出现不同连接通过nat后时间不一致的情况。
+  在nat后面别用，因为他会判断packet时间，会出现不同连接通过nat后时间不一致的情况。
 
-![](images/nat.png)
+  ![](images/nat.png)
 
-#### net.ipv4.tcp_tw_reuse
+  #### net.ipv4.tcp_tw_reuse
 
-Fin_wait2状态下不能reuseaddr。处于TIME_WAIT状态下才能reuse。
+  Fin_wait2状态下不能reuseaddr。处于TIME_WAIT状态下才能reuse。
 
-Bind端口前得设置SO_REUSEADDR。
+  Bind端口前得设置SO_REUSEADDR。
 
-![](images/bind_all_sockets.png)
+  ![](images/bind_all_sockets.png)
 
-并且需要在1s后才可以connect重用
+  并且需要在1s后才可以connect重用
 
-![](images/reuse_connect.png)
+  ![](images/reuse_connect.png)
 
-#### net.ipv4.tcp_max_tw_buckets
+  #### net.ipv4.tcp_max_tw_buckets
 
-表示最大timewait socket数量。如果超过，Dmesg查看TCP: `time wait bucket table overflow`
+  表示最大timewait socket数量。如果超过，Dmesg查看TCP: `time wait bucket table overflow`
 
-#### net.ipv4.ip_local_port_range
+  #### net.ipv4.ip_local_port_range
 
-表示本地端口范围。
+  表示本地端口范围。
 
 
 
