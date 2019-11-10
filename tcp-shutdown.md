@@ -8,7 +8,7 @@
 
 ## 关闭输入
 
-只是client端设置RCV_SHUTDOWN，对端发来的数据不会接收。但是可以继续发送数据。
+只是client端设置`RCV_SHUTDOWN`，对端发来的数据不会接收。但是可以继续发送数据。
 
 ## 关闭输出
 
@@ -16,7 +16,7 @@
 
 ![](images/tcp_shutdown.png)
 
-Sock不是SOCK_DEAD, 所以收到ack后转为TCP_FIN_WAIT2, 并没有启动定时器。
+Sock不是SOCK_DEAD, 所以收到ack后转为`TCP_FIN_WAIT2`, 并没有启动定时器。
 
 ![](images/rcv_ack_in_shutdown.png)
 
